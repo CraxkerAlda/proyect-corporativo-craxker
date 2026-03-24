@@ -24,3 +24,6 @@ tower-http = { version = "0.5", features = ["fs", "cors", "trace"] }
 # Otros
 uuid = { version = "1.0", features = ["v4"] } # Para nombres únicos de imágenes
 reqwest = { version = "0.11", features = ["json", "blocking"] }
+
+[patch.crates-io]
+time = { git = "https://github.com/time-rs/time", tag = "v0.3.36" }
