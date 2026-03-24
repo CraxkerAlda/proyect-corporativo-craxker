@@ -146,7 +146,7 @@ pub fn layout_maestro(titulo: &str, contenido: String) -> String {
                         for (const [nombrePadre, modulos] of Object.entries(grupos)) {{
                             let icon = 'folder';
                             if (nombrePadre === 'Seguridad') icon = 'shield-alt';
-                            if (nombrePadre === 'Principal 1') icon = 'hospital';
+                            if (nombrePadre === 'Principal 1') icon = 'th-largeS';
                             if (nombrePadre === 'Principal 2') icon = 'th-large';
 
                             let linksHtml = '';
