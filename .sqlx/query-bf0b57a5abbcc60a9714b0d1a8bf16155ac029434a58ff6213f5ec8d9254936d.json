@@ -1,0 +1,20 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        INSERT INTO permisos_perfil (idmodulo, idperfil, bitagregar, biteditar, bitconsulta, biteliminar, bitdetalle)\n        VALUES ($1, $2, $3, $4, $5, $6, $7)\n        ON CONFLICT (idmodulo, idperfil) \n        DO UPDATE SET \n            bitagregar = EXCLUDED.bitagregar,\n            biteditar = EXCLUDED.biteditar,\n            bitconsulta = EXCLUDED.bitconsulta,\n            biteliminar = EXCLUDED.biteliminar,\n            bitdetalle = EXCLUDED.bitdetalle\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int4",
+        "Int4",
+        "Bool",
+        "Bool",
+        "Bool",
+        "Bool",
+        "Bool"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "bf0b57a5abbcc60a9714b0d1a8bf16155ac029434a58ff6213f5ec8d9254936d"
+}

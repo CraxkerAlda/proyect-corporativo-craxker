@@ -1,0 +1,50 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT u.id, u.strnombreusuario, u.strcorreo, u.strnumerocelular, \n               u.strimagenpath, p.strnombreperfil\n        FROM usuarios u\n        JOIN perfiles p ON u.idperfil = p.id\n        ORDER BY u.id DESC\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 1,
+        "name": "strnombreusuario",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 2,
+        "name": "strcorreo",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 3,
+        "name": "strnumerocelular",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 4,
+        "name": "strimagenpath",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 5,
+        "name": "strnombreperfil",
+        "type_info": "Varchar"
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      true,
+      true,
+      false
+    ]
+  },
+  "hash": "0f76ab93d3fecb07424a89e50608d2923c4c127de076b85343e0e4ac903194ae"
+}

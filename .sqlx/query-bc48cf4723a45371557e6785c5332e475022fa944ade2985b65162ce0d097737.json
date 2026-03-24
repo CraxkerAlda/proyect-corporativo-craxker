@@ -1,0 +1,64 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT id, idmodulo, idperfil, \n            bitagregar as \"bitagregar!\", \n            biteditar as \"biteditar!\", \n            bitconsulta as \"bitconsulta!\", \n            biteliminar as \"biteliminar!\", \n            bitdetalle as \"bitdetalle!\" \n        FROM permisos_perfil WHERE idperfil = $1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 1,
+        "name": "idmodulo",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 2,
+        "name": "idperfil",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 3,
+        "name": "bitagregar!",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 4,
+        "name": "biteditar!",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 5,
+        "name": "bitconsulta!",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 6,
+        "name": "biteliminar!",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 7,
+        "name": "bitdetalle!",
+        "type_info": "Bool"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int4"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      true,
+      true,
+      true,
+      true,
+      true
+    ]
+  },
+  "hash": "bc48cf4723a45371557e6785c5332e475022fa944ade2985b65162ce0d097737"
+}

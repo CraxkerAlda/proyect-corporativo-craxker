@@ -1,0 +1,64 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT DISTINCT\n            m_parent.idMenu as \"parent_id!\",\n            CASE \n                WHEN m_parent.idMenu = 1 THEN 'Seguridad'\n                WHEN m_parent.idMenu = 2 THEN 'Principal 1'\n                WHEN m_parent.idMenu = 3 THEN 'Principal 2'\n            END as \"parent_name!\",\n            mod.id as \"modulo_id!\",\n            mod.strNombreModulo as \"modulo_name!\",\n            pp.bitAgregar as \"bitagregar!\", \n            pp.bitEditar as \"biteditar!\", \n            pp.bitEliminar as \"biteliminar!\", \n            pp.bitConsulta as \"bitconsulta!\"\n        FROM menu m_parent\n        JOIN modulos mod ON m_parent.idModulo = mod.id\n        JOIN permisos_perfil pp ON pp.idModulo = mod.id\n        WHERE pp.idPerfil = $1 \n          AND (pp.bitAgregar = TRUE OR pp.bitEditar = TRUE OR pp.bitEliminar = TRUE OR pp.bitConsulta = TRUE)\n        ORDER BY m_parent.idMenu, mod.strNombreModulo\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "parent_id!",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 1,
+        "name": "parent_name!",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "modulo_id!",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 3,
+        "name": "modulo_name!",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 4,
+        "name": "bitagregar!",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 5,
+        "name": "biteditar!",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 6,
+        "name": "biteliminar!",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 7,
+        "name": "bitconsulta!",
+        "type_info": "Bool"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int4"
+      ]
+    },
+    "nullable": [
+      true,
+      null,
+      false,
+      false,
+      true,
+      true,
+      true,
+      true
+    ]
+  },
+  "hash": "a9581ce9e763b430dafb89f13a6d0938bae3baa084e746b1006cd06c8f867b24"
+}

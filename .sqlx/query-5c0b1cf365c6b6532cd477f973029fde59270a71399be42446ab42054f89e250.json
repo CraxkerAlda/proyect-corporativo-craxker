@@ -1,0 +1,20 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        UPDATE usuarios \n        SET strNombreUsuario = $1, idPerfil = $2, strCorreo = $3, \n            strNumeroCelular = $4, idEstadoUsuario = $5,\n            strImagenPath = COALESCE($6, strImagenPath)\n        WHERE id = $7\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Varchar",
+        "Int4",
+        "Varchar",
+        "Varchar",
+        "Int2",
+        "Text",
+        "Int4"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "5c0b1cf365c6b6532cd477f973029fde59270a71399be42446ab42054f89e250"
+}

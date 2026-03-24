@@ -237,7 +237,6 @@ pub async fn pantalla_estatica(req: axum::extract::Request) -> Html<String> {
                 <table class="craxker-table" style="width: 100%; border-collapse: collapse;">
                     <thead>
                         <tr style="background: #f8fafc; border-bottom: 2px solid #e2e8f0;">
-                            <th style="text-align: left; padding: 15px; color: var(--primary-blue); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px;">ID</th>
                             <th style="text-align: left; padding: 15px; color: var(--primary-blue); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px;">Descripción Demo</th>
                             <th style="text-align: left; padding: 15px; color: var(--primary-blue); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px;">Fecha Registro</th>
                             <th style="text-align: left; padding: 15px; color: var(--primary-blue); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px;">Estado</th>
@@ -273,17 +272,10 @@ pub async fn pantalla_estatica(req: axum::extract::Request) -> Html<String> {
                 </table>
             </div>
             
-            <div style="margin-top: 25px; padding: 15px; background: #fffbeb; border-left: 4px solid #f59e0b; border-radius: 4px;">
-                <p style="margin: 0; color: #92400e; font-size: 0.85rem; font-weight: 500;">
-                    <i class="fas fa-exclamation-triangle"></i> <strong>Nota de Evaluación:</strong> Este módulo es una vista estática diseñada para validar la estructura del menú y la respuesta del sistema de permisos. No requiere persistencia en base de datos.
-                </p>
-            </div>
         </div>
 
         <script>
             document.addEventListener('DOMContentLoaded', async () => {{
-                // Protegemos el módulo con la lógica de seguridad global
-                // Esto hará que si el usuario no tiene bitConsulta para este módulo, lo mande a error-403
                 await aplicarPermisosAcciones('{mod_db}');
             }});
         </script>

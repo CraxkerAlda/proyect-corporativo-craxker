@@ -1,0 +1,70 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT \n            id, strnombreusuario, idperfil, strpwd, \n            idestadousuario as \"idestadousuario!\", \n            strcorreo, strnumerocelular, \n            strimagenpath as \"strimagenpath!\", \n            fechacreacion as \"fechacreacion!\" \n        FROM usuarios WHERE strnombreusuario = $1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 1,
+        "name": "strnombreusuario",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 2,
+        "name": "idperfil",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 3,
+        "name": "strpwd",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 4,
+        "name": "idestadousuario!",
+        "type_info": "Int2"
+      },
+      {
+        "ordinal": 5,
+        "name": "strcorreo",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 6,
+        "name": "strnumerocelular",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 7,
+        "name": "strimagenpath!",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 8,
+        "name": "fechacreacion!",
+        "type_info": "Timestamp"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      true,
+      true,
+      true
+    ]
+  },
+  "hash": "d6c5aa1aa1cd4ea9e7ef7b9301f5fb801aadb6ff411355679f67c9fb81cdb1d4"
+}

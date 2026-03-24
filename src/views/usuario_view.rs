@@ -20,8 +20,6 @@ pub fn vista_registro_usuario(perfiles: Vec<crate::models::Perfil>) -> String {
         <i class="fas fa-chevron-right separator"></i>
         <span class="current">Nuevo usuario</span>
     </div>
-
-    <div class="breadcrumb">Seguridad > Usuario > <a href="#">Nuevo Registro</a></div>
     
     <div class="card-usuario">
         <div class="form-header">

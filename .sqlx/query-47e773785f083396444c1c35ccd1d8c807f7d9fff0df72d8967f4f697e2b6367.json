@@ -1,0 +1,34 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT id, strnombreperfil, bitadministrador as \"bitadministrador!\" FROM perfiles WHERE id = $1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 1,
+        "name": "strnombreperfil",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 2,
+        "name": "bitadministrador!",
+        "type_info": "Bool"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int4"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      true
+    ]
+  },
+  "hash": "47e773785f083396444c1c35ccd1d8c807f7d9fff0df72d8967f4f697e2b6367"
+}

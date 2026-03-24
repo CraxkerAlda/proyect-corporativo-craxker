@@ -1,0 +1,46 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT m.strNombreModulo, pp.bitConsulta, pp.bitAgregar, pp.bitEditar, pp.bitEliminar \n           FROM permisos_perfil pp\n           JOIN modulos m ON pp.idModulo = m.id\n           WHERE pp.idPerfil = $1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "strnombremodulo",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 1,
+        "name": "bitconsulta",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 2,
+        "name": "bitagregar",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 3,
+        "name": "biteditar",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 4,
+        "name": "biteliminar",
+        "type_info": "Bool"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int4"
+      ]
+    },
+    "nullable": [
+      false,
+      true,
+      true,
+      true,
+      true
+    ]
+  },
+  "hash": "c93aaa55c962999c6430f7c2682b62fbd2e52b48855c774ae45aded37fd40ce0"
+}
