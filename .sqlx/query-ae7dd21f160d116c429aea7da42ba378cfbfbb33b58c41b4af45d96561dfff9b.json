@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n        SELECT u.id, u.strnombreusuario, u.strcorreo, u.strnumerocelular, \n               u.strimagenpath, p.strnombreperfil\n        FROM usuarios u\n        JOIN perfiles p ON u.idperfil = p.id\n        ORDER BY u.id DESC\n        ",
+  "query": "\n        SELECT u.id, u.strnombreusuario, u.strcorreo, u.strnumerocelular, \n               u.strimagenpath, p.strnombreperfil,\n               u.idestadousuario as \"idestadousuario!\"\n        FROM usuarios u\n        JOIN perfiles p ON u.idperfil = p.id\n        ORDER BY u.id DESC\n        ",
   "describe": {
     "columns": [
       {
@@ -32,6 +32,11 @@
         "ordinal": 5,
         "name": "strnombreperfil",
         "type_info": "Varchar"
+      },
+      {
+        "ordinal": 6,
+        "name": "idestadousuario!",
+        "type_info": "Int2"
       }
     ],
     "parameters": {
@@ -43,8 +48,9 @@
       false,
       true,
       true,
-      false
+      false,
+      true
     ]
   },
-  "hash": "0f76ab93d3fecb07424a89e50608d2923c4c127de076b85343e0e4ac903194ae"
+  "hash": "ae7dd21f160d116c429aea7da42ba378cfbfbb33b58c41b4af45d96561dfff9b"
 }
