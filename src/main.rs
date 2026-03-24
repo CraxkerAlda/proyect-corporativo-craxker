@@ -21,7 +21,7 @@ async fn main() {
     dotenv().ok();
     let database_url = std::env::var("DATABASE_URL").expect("DATABASE_URL no definida");
     let port = std::env::var("PORT").unwrap_or_else(|_| "3000".to_string());
-    let addr = format!("127.0.0.1:{}", port).parse::<SocketAddr>().unwrap();
+    let addr = format!("0.0.0.0:{}", port).parse::<SocketAddr>().expect("Puerto inválido");
 
     let pool = PgPoolOptions::new()
         .max_connections(5)
