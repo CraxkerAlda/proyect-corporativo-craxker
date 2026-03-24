@@ -115,7 +115,6 @@ pub fn vista_matriz_permisos(perfiles: Vec<crate::models::Perfil>, modulos: Vec<
             
             if (res.ok) {{
                 const permisos = await res.json();
-                // Resetear todos antes de marcar
                 document.querySelectorAll('.chk-perm').forEach(c => c.checked = false);
                 
                 permisos.forEach(p => {{
@@ -172,14 +171,50 @@ pub fn vista_matriz_permisos(perfiles: Vec<crate::models::Perfil>, modulos: Vec<
             btn.innerHTML = originalHTML;
 
             if(errores === 0) {{
-                alert("¡Matriz de permisos actualizada con éxito!");
+                alert("Matriz de permisos actualizada");
             }} else {{
                 alert("Se guardaron los permisos, pero hubo errores en " + errores + " módulos.");
             }}
         }}
 
         document.addEventListener('DOMContentLoaded', async () => {{
+            // Primero verificar acceso general al módulo
             await aplicarPermisosAcciones('PERMISOS_PERFIL');
+
+            // Luego verificar si puede EDITAR la matriz o solo consultarla
+            const token = localStorage.getItem('jwt_token');
+            if (!token) return;
+
+            const res = await fetch('/api/permisos/mis-permisos', {{
+                headers: {{ 'Authorization': 'Bearer ' + token }}
+            }});
+
+            if (!res.ok) return;
+
+            const permisos = await res.json();
+            const p = permisos.find(x => x.strnombremodulo === 'PERMISOS_PERFIL');
+
+            // Si NO tiene biteditar → modo solo lectura
+            if (!p || !p.biteditar) {{
+                // Deshabilitar todos los checkboxes
+                document.querySelectorAll('.chk-perm').forEach(chk => {{
+                    chk.disabled = true;
+                    chk.style.cursor = 'not-allowed';
+                    chk.style.opacity = '0.5';
+                }});
+
+                // Ocultar botón guardar
+                document.getElementById('btnGuardarPermisos').style.display = 'none';
+
+                // Indicador visual de modo lectura
+                const header = document.querySelector('.header-permisos');
+                if (header) {{
+                    const badge = document.createElement('span');
+                    badge.innerHTML = '<i class="fas fa-eye"></i> Modo solo lectura';
+                    badge.style.cssText = 'background:#f1f5f9; color:#64748b; padding:5px 14px; border-radius:20px; font-size:0.8rem; font-weight:600; margin-left:auto;';
+                    header.appendChild(badge);
+                }}
+            }}
         }});
     </script>
     "##, opciones_perfil = opciones_perfil, filas_modulos = filas_modulos)

@@ -17,6 +17,7 @@ pub struct UsuarioConPerfil {
     pub strnumerocelular: Option<String>,
     pub strimagenpath: Option<String>,
     pub strnombreperfil: String,
+    pub idestadousuario: i16,
 }
 
 pub async fn dashboard_inicio() -> Html<String> {
@@ -63,7 +64,8 @@ pub async fn vista_lista_usuarios(State(pool): State<PgPool>) -> Html<String> {
         UsuarioConPerfil,
         r#"
         SELECT u.id, u.strnombreusuario, u.strcorreo, u.strnumerocelular, 
-               u.strimagenpath, p.strnombreperfil
+               u.strimagenpath, p.strnombreperfil,
+               u.idestadousuario as "idestadousuario!"
         FROM usuarios u
         JOIN perfiles p ON u.idperfil = p.id
         ORDER BY u.id DESC
@@ -76,6 +78,7 @@ pub async fn vista_lista_usuarios(State(pool): State<PgPool>) -> Html<String> {
     let contenido = vista_tabla_usuarios(usuarios);
     Html(layout_maestro("Lista de Usuarios", contenido))
 }
+
 
 pub async fn vista_editar_usuario_handler(
     State(pool): State<PgPool>,

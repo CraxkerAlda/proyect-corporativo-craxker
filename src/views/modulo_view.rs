@@ -3,18 +3,15 @@ pub fn vista_tabla_modulos(modulos: Vec<crate::models::Modulo>) -> String {
     for m in modulos {
         filas.push_str(&format!(
             r#"
-            <tr class="modulo-row">
+            <tr class="modulo-row" data-nombre="{nombre_lower}">
                 <td><i class="fas fa-cube" style="color: var(--accent-green); margin-right: 10px;"></i><strong>{nombre}</strong></td>
                 <td class="actions" style="text-align: center;">
-                    <a href="/vistas/modulo/editar/{id}" class="btn-action edit" title="Editar">
-                        <i class="fas fa-edit"></i>
-                    </a>
-                    <button class="btn-action delete" onclick="eliminarModulo({id})" title="Eliminar">
-                        <i class="fas fa-trash-alt"></i>
-                    </button>
+                    <a href="/vistas/modulo/editar/{id}" class="btn-action edit"><i class="fas fa-edit"></i></a>
+                    <button class="btn-action delete" onclick="eliminarModulo({id})"><i class="fas fa-trash-alt"></i></button>
                 </td>
             </tr>
             "#,
+            nombre_lower = m.strnombremodulo.to_lowercase(),
             nombre = m.strnombremodulo,
             id = m.id
         ));
@@ -40,6 +37,24 @@ pub fn vista_tabla_modulos(modulos: Vec<crate::models::Modulo>) -> String {
             </a>
         </div>
 
+        <div class="filtros-container">
+            <div class="filtro-grupo">
+                <label class="filtro-label">BUSCAR POR NOMBRE</label>
+                <div class="filtro-search-wrap">
+                    <i class="fas fa-search filtro-icon"></i>
+                    <input type="text" id="filtroBusqueda" class="filtro-input"
+                           placeholder="Ej. USUARIOS, PERMISOS..."
+                           oninput="aplicarFiltros()">
+                </div>
+            </div>
+            <div class="filtro-grupo filtro-grupo-xs">
+                <label class="filtro-label">&nbsp;</label>
+                <button class="filtro-btn-limpiar" onclick="limpiarFiltros()">
+                    <i class="fas fa-times"></i> Limpiar
+                </button>
+            </div>
+        </div>
+
         <div class="table-responsive">
             <table class="craxker-table" id="tablaModulos">
                 <thead>
@@ -48,14 +63,17 @@ pub fn vista_tabla_modulos(modulos: Vec<crate::models::Modulo>) -> String {
                         <th style="text-align: center; width: 150px;">Acciones</th>
                     </tr>
                 </thead>
-                <tbody>
-                    {filas}
-                </tbody>
+                <tbody>{filas}</tbody>
             </table>
+            <div id="sinResultados" style="display:none; text-align:center; padding:40px; color:#94a3b8;">
+                <i class="fas fa-search" style="font-size:2rem; margin-bottom:10px;"></i>
+                <p style="margin:0; font-weight:600;">No hay módulos con ese nombre</p>
+            </div>
         </div>
 
-        <div class="pagination-container" style="display: flex; justify-content: space-between; align-items: center; margin-top: 20px;">
-            <div class="pagination-btns">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:20px;">
+            <span id="contadorResultados" style="font-size:0.85rem; color:#64748b;"></span>
+            <div>
                 <button class="btn-page" id="btnPrev" onclick="cambiarPagina(-1)"><i class="fas fa-chevron-left"></i> Anterior</button>
                 <button class="btn-page" id="btnNext" onclick="cambiarPagina(1)">Siguiente <i class="fas fa-chevron-right"></i></button>
             </div>
@@ -64,8 +82,21 @@ pub fn vista_tabla_modulos(modulos: Vec<crate::models::Modulo>) -> String {
 
     <style>
         .card-table {{ background: white; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); padding: 25px; }}
-        .table-header {{ display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; border-bottom: 1px solid #f1f5f9; padding-bottom: 20px; }}
-        .btn-new-pro {{ background: var(--accent-green); color: white; text-decoration: none; padding: 12px 24px; border-radius: 8px; font-weight: 600; font-size: 0.9rem; display: inline-flex; align-items: center; gap: 8px; transition: 0.3s; }}
+        .table-header {{ display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid #f1f5f9; padding-bottom: 20px; }}
+        .btn-new-pro {{ background: var(--accent-green); color: white; text-decoration: none; padding: 12px 24px; border-radius: 8px; font-weight: 600; font-size: 0.9rem; display: inline-flex; align-items: center; gap: 8px; }}
+
+        .filtros-container {{ display: flex; gap: 16px; align-items: flex-end; flex-wrap: wrap; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 18px 20px; margin-bottom: 20px; }}
+        .filtro-grupo {{ display: flex; flex-direction: column; gap: 6px; flex: 1; min-width: 200px; }}
+        .filtro-grupo-xs {{ flex: 0 0 110px; }}
+        .filtro-label {{ font-size: 0.85rem; font-weight: 700; color: var(--primary-blue); letter-spacing: 0.5px; text-transform: uppercase; }}
+        .filtro-search-wrap {{ position: relative; }}
+        .filtro-icon {{ position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 0.85rem; }}
+        .filtro-select {{ width: 100%; padding: 10px 12px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 0.9rem; background: white; font-family: inherit; }}
+        .filtro-input {{ width: 100%; padding: 10px 12px 10px 34px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 0.9rem; box-sizing: border-box; font-family: inherit; }}
+        .filtro-input:focus {{ outline: none; border-color: var(--primary-blue); }}
+        .filtro-btn-limpiar {{ width: 100%; padding: 10px 12px; background: white; border: 1px solid #e2e8f0; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 0.85rem; color: #64748b; display: flex; align-items: center; justify-content: center; gap: 6px; transition: 0.2s; }}
+        .filtro-btn-limpiar:hover {{ background: #f1f5f9; color: #e11d48; border-color: #fecaca; }}
+
         .craxker-table {{ width: 100%; border-collapse: collapse; }}
         .craxker-table th {{ text-align: left; padding: 15px; background: #f8fafc; color: var(--primary-blue); font-size: 0.85rem; text-transform: uppercase; border-bottom: 2px solid #e2e8f0; }}
         .craxker-table td {{ padding: 15px; border-bottom: 1px solid #f1f5f9; color: #475569; }}
@@ -79,30 +110,53 @@ pub fn vista_tabla_modulos(modulos: Vec<crate::models::Modulo>) -> String {
     <script>
         let paginaActual = 1;
         const filasPorPagina = 5;
+        let filasFiltradas = [];
+
+        function aplicarFiltros() {{
+            const busqueda = document.getElementById('filtroBusqueda').value.toLowerCase().trim();
+            const todas    = Array.from(document.querySelectorAll('.modulo-row'));
+
+            filasFiltradas = todas.filter(f =>
+                !busqueda || (f.dataset.nombre || '').includes(busqueda)
+            );
+
+            todas.forEach(f => f.style.display = 'none');
+            paginaActual = 1;
+            mostrarPagina(1);
+            document.getElementById('sinResultados').style.display =
+                filasFiltradas.length === 0 ? 'block' : 'none';
+        }}
+
+        function limpiarFiltros() {{
+            document.getElementById('filtroBusqueda').value = '';
+            aplicarFiltros();
+        }}
 
         function mostrarPagina(n) {{
-            const filas = Array.from(document.querySelectorAll('.modulo-row'));
-            const totalPaginas = Math.ceil(filas.length / filasPorPagina);
+            const base = filasFiltradas.length > 0
+                ? filasFiltradas
+                : Array.from(document.querySelectorAll('.modulo-row'));
+
+            const total = Math.ceil(base.length / filasPorPagina);
             if (n < 1) n = 1;
-            if (n > totalPaginas) n = totalPaginas;
+            if (n > total) n = total;
             paginaActual = n;
 
-            filas.forEach((fila, index) => {{
-                fila.style.display = (index >= (n - 1) * filasPorPagina && index < n * filasPorPagina) ? 'table-row' : 'none';
+            Array.from(document.querySelectorAll('.modulo-row')).forEach(f => f.style.display = 'none');
+            base.forEach((f, i) => {{
+                f.style.display = (i >= (n-1)*filasPorPagina && i < n*filasPorPagina) ? 'table-row' : 'none';
             }});
 
             document.getElementById('btnPrev').disabled = (paginaActual === 1);
-            document.getElementById('btnNext').disabled = (paginaActual === totalPaginas || totalPaginas === 0);
+            document.getElementById('btnNext').disabled = (paginaActual === total || total === 0);
         }}
 
-        function cambiarPagina(delta) {{
-            mostrarPagina(paginaActual + delta);
-        }}
+        function cambiarPagina(delta) {{ mostrarPagina(paginaActual + delta); }}
 
         async function eliminarModulo(id) {{
             if(!confirm("¿Deseas eliminar este módulo?")) return;
             try {{
-                const res = await fetch(`/api/modulos/${{id}}`, {{ 
+                const res = await fetch(`/api/modulos/${{id}}`, {{
                     method: 'DELETE',
                     headers: {{ 'Authorization': 'Bearer ' + localStorage.getItem('jwt_token') }}
                 }});
@@ -113,6 +167,7 @@ pub fn vista_tabla_modulos(modulos: Vec<crate::models::Modulo>) -> String {
 
         document.addEventListener('DOMContentLoaded', async () => {{
             await aplicarPermisosAcciones('MODULOS');
+            filasFiltradas = Array.from(document.querySelectorAll('.modulo-row'));
             mostrarPagina(1);
         }});
     </script>

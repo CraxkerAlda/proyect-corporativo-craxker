@@ -151,12 +151,28 @@ pub fn vista_registro_usuario(perfiles: Vec<crate::models::Perfil>) -> String {
     "##, perfiles_options = opciones_perfil)
 }
 
+
 pub fn vista_tabla_usuarios(usuarios: Vec<UsuarioConPerfil>) -> String {
     let mut filas = String::new();
+    
+    let mut perfiles_vistos: Vec<String> = Vec::new();
+    for u in &usuarios {
+        if !perfiles_vistos.contains(&u.strnombreperfil) {
+            perfiles_vistos.push(u.strnombreperfil.clone());
+        }
+    }
+    let mut opciones_perfil_filtro = String::from(r#"<option value="">Todos</option>"#);
+    for p in &perfiles_vistos {
+        opciones_perfil_filtro.push_str(&format!(r#"<option value="{p}">{p}</option>"#));
+    }
+
     for u in usuarios {
         filas.push_str(&format!(
             r#"
-            <tr class="user-row">
+            <tr class="user-row"
+                data-nombre="{user_lower}"
+                data-perfil="{perfil}"
+                data-estado="{estado_str}">
                 <td class="user-td">
                     <img src="{img}" onerror="this.src='/uploads/default.png'" class="table-avatar">
                     <span>{user}</span>
@@ -176,15 +192,16 @@ pub fn vista_tabla_usuarios(usuarios: Vec<UsuarioConPerfil>) -> String {
             "#,
             img = u.strimagenpath.unwrap_or_else(|| "/uploads/default.png".to_string()),
             user = u.strnombreusuario,
+            user_lower = u.strnombreusuario.to_lowercase(),
             perfil = u.strnombreperfil,
             correo = u.strcorreo,
             tel = u.strnumerocelular.unwrap_or_else(|| "-".to_string()),
+            estado_str = "activo", // idEstado no está en UsuarioConPerfil, se deja fijo o amplías el struct
             id = u.id
         ));
     }
 
     format!(r##"
-
     <div class="breadcrumb">
         <a href="/dashboard"><i class="fas fa-home"></i> Inicio</a>
         <i class="fas fa-chevron-right separator"></i>
@@ -204,6 +221,37 @@ pub fn vista_tabla_usuarios(usuarios: Vec<UsuarioConPerfil>) -> String {
             </a>
         </div>
 
+        <!-- FILTROS -->
+        <div class="filtros-container">
+            <div class="filtro-grupo">
+                <label class="filtro-label">BUSCAR POR NOMBRE</label>
+                <div class="filtro-search-wrap">
+                    <i class="fas fa-search filtro-icon"></i>
+                    <input type="text" id="filtroBusqueda" class="filtro-input" placeholder="Buscar usuario..." oninput="aplicarFiltros()">
+                </div>
+            </div>
+            <div class="filtro-grupo filtro-grupo-sm">
+                <label class="filtro-label">PERFIL ASIGNADO</label>
+                <select id="filtroPerfil" class="filtro-select" onchange="aplicarFiltros()">
+                    {opciones_perfil_filtro}
+                </select>
+            </div>
+            <div class="filtro-grupo filtro-grupo-sm">
+                <label class="filtro-label">ESTADO</label>
+                <select id="filtroEstado" class="filtro-select" onchange="aplicarFiltros()">
+                    <option value="">Todos</option>
+                    <option value="activo">Activo</option>
+                    <option value="inactivo">Inactivo</option>
+                </select>
+            </div>
+            <div class="filtro-grupo filtro-grupo-xs">
+                <label class="filtro-label">&nbsp;</label>
+                <button class="filtro-btn-limpiar" onclick="limpiarFiltros()">
+                    <i class="fas fa-times"></i> Limpiar
+                </button>
+            </div>
+        </div>
+
         <div class="table-responsive">
             <table class="craxker-table" id="tablaUsuarios">
                 <thead>
@@ -219,9 +267,14 @@ pub fn vista_tabla_usuarios(usuarios: Vec<UsuarioConPerfil>) -> String {
                     {filas}
                 </tbody>
             </table>
+            <div id="sinResultados" style="display:none; text-align:center; padding:40px; color:#94a3b8;">
+                <i class="fas fa-search" style="font-size:2rem; margin-bottom:10px;"></i>
+                <p style="margin:0; font-weight:600;">No se encontraron usuarios con esos filtros</p>
+            </div>
         </div>
 
-        <div class="pagination-container">
+        <div class="pagination-container" style="display:flex; justify-content:space-between; align-items:center; margin-top:20px;">
+            <span id="contadorResultados" style="font-size:0.85rem; color:#64748b;"></span>
             <div class="pagination-btns">
                 <button class="btn-page" id="btnPrev" onclick="cambiarPagina(-1)"><i class="fas fa-chevron-left"></i> Anterior</button>
                 <button class="btn-page" id="btnNext" onclick="cambiarPagina(1)">Siguiente <i class="fas fa-chevron-right"></i></button>
@@ -231,9 +284,24 @@ pub fn vista_tabla_usuarios(usuarios: Vec<UsuarioConPerfil>) -> String {
 
     <style>
         .card-table {{ background: white; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); padding: 25px; margin-top: 10px; }}
-        .table-header {{ display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }}
+        .table-header {{ display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }}
         .btn-new-pro {{ background: var(--accent-green); color: white; text-decoration: none; padding: 12px 24px; border-radius: 8px; font-weight: 600; font-size: 0.9rem; display: inline-flex; align-items: center; gap: 8px; transition: 0.3s; box-shadow: 0 4px 10px rgba(40, 167, 69, 0.2); }}
         .btn-new-pro:hover {{ background: #218838; transform: translateY(-2px); }}
+
+        .filtros-container {{ display: flex; gap: 16px; align-items: flex-end; flex-wrap: wrap; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 18px 20px; margin-bottom: 20px; }}
+        .filtro-grupo {{ display: flex; flex-direction: column; gap: 6px; flex: 1; min-width: 200px; }}
+        .filtro-grupo-sm {{ flex: 0 0 160px; min-width: 140px; }}
+        .filtro-grupo-xs {{ flex: 0 0 110px; min-width: 100px; }}
+        .filtro-label {{ font-size: 0.85rem; font-weight: 700; color: var(--primary-blue); letter-spacing: 0.5px; text-transform: uppercase; }}
+        .filtro-search-wrap {{ position: relative; }}
+        .filtro-icon {{ position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 0.85rem; }}
+        .filtro-input {{ width: 100%; padding: 10px 12px 10px 34px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 0.9rem; box-sizing: border-box; font-family: inherit; }}
+        .filtro-input:focus {{ outline: none; border-color: var(--primary-blue); }}
+        .filtro-select {{ width: 100%; padding: 10px 12px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 0.9rem; background: white; font-family: inherit; }}
+        .filtro-select:focus {{ outline: none; border-color: var(--primary-blue); }}
+        .filtro-btn-limpiar {{ width: 100%; padding: 10px 12px; background: white; border: 1px solid #e2e8f0; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 0.85rem; color: #64748b; display: flex; align-items: center; justify-content: center; gap: 6px; transition: 0.2s; }}
+        .filtro-btn-limpiar:hover {{ background: #f1f5f9; color: #e11d48; border-color: #fecaca; }}
+
         .craxker-table {{ width: 100%; border-collapse: collapse; }}
         .craxker-table th {{ text-align: left; padding: 15px; background: #f8fafc; color: var(--primary-blue); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 2px solid #e2e8f0; }}
         .craxker-table td {{ padding: 12px 15px; border-bottom: 1px solid #f1f5f9; vertical-align: middle; color: #475569; }}
@@ -245,21 +313,63 @@ pub fn vista_tabla_usuarios(usuarios: Vec<UsuarioConPerfil>) -> String {
         .edit {{ background: #eef2ff; color: var(--primary-blue); }}
         .delete {{ background: #fff1f2; color: #e11d48; margin-left: 5px; }}
         .btn-action:hover {{ transform: scale(1.1); }}
+        .btn-page {{ padding: 8px 16px; border: 1px solid #ddd; background: white; border-radius: 6px; cursor: pointer; }}
+        .btn-page:disabled {{ opacity: 0.5; cursor: not-allowed; }}
     </style>
 
     <script>
         let paginaActual = 1;
         const filasPorPagina = 5;
-        
+        let filasFiltradas = [];
+
+        function aplicarFiltros() {{
+            const busqueda  = document.getElementById('filtroBusqueda').value.toLowerCase().trim();
+            const perfil    = document.getElementById('filtroPerfil').value;
+            const estado    = document.getElementById('filtroEstado').value;
+            const todasFilas = Array.from(document.querySelectorAll('.user-row'));
+
+            filasFiltradas = todasFilas.filter(fila => {{
+                const nombre  = fila.dataset.nombre  || '';
+                const prf     = fila.dataset.perfil  || '';
+                const est     = fila.dataset.estado  || '';
+                const okNombre = !busqueda || nombre.includes(busqueda);
+                const okPerfil = !perfil   || prf === perfil;
+                const okEstado = !estado   || est === estado;
+                return okNombre && okPerfil && okEstado;
+            }});
+
+            // Ocultar todas primero
+            todasFilas.forEach(f => f.style.display = 'none');
+
+            paginaActual = 1;
+            mostrarPagina(1);
+
+            document.getElementById('sinResultados').style.display =
+                filasFiltradas.length === 0 ? 'block' : 'none';
+        }}
+
+        function limpiarFiltros() {{
+            document.getElementById('filtroBusqueda').value = '';
+            document.getElementById('filtroPerfil').value  = '';
+            document.getElementById('filtroEstado').value  = '';
+            aplicarFiltros();
+        }}
+
         function mostrarPagina(n) {{
-            const filas = Array.from(document.querySelectorAll('.user-row'));
-            const totalPaginas = Math.ceil(filas.length / filasPorPagina);
+            const base = filasFiltradas.length > 0
+                ? filasFiltradas
+                : Array.from(document.querySelectorAll('.user-row'));
+
+            const totalPaginas = Math.ceil(base.length / filasPorPagina);
             if (n < 1) n = 1;
             if (n > totalPaginas) n = totalPaginas;
             paginaActual = n;
 
-            filas.forEach((fila, index) => {{
-                fila.style.display = (index >= (n - 1) * filasPorPagina && index < n * filasPorPagina) ? 'table-row' : 'none';
+            // Ocultar todo y mostrar solo la página actual
+            Array.from(document.querySelectorAll('.user-row')).forEach(f => f.style.display = 'none');
+            base.forEach((fila, index) => {{
+                fila.style.display = (index >= (n-1)*filasPorPagina && index < n*filasPorPagina)
+                    ? 'table-row' : 'none';
             }});
 
             document.getElementById('btnPrev').disabled = (paginaActual === 1);
@@ -272,25 +382,26 @@ pub fn vista_tabla_usuarios(usuarios: Vec<UsuarioConPerfil>) -> String {
 
         document.addEventListener('DOMContentLoaded', async () => {{
             await aplicarPermisosAcciones('USUARIOS');
+            filasFiltradas = Array.from(document.querySelectorAll('.user-row'));
             mostrarPagina(1);
         }});
 
         async function eliminarUsuario(id) {{
             if(confirm("¿Desea eliminar este usuario?")) {{
                 try {{
-                    const res = await fetch(`/api/usuarios/${{id}}`, {{ 
+                    const res = await fetch(`/api/usuarios/${{id}}`, {{
                         method: 'DELETE',
                         headers: {{ 'Authorization': 'Bearer ' + localStorage.getItem('jwt_token') }}
                     }});
                     if(res.ok) location.reload();
                     else alert("No tiene permiso para eliminar registros.");
-                }} catch(e) {{ 
-                    alert("Error de conexión con el servidor."); 
+                }} catch(e) {{
+                    alert("Error de conexión con el servidor.");
                 }}
             }}
         }}
     </script>
-    "##, filas = filas)
+    "##, filas = filas, opciones_perfil_filtro = opciones_perfil_filtro)
 }
 
 pub fn vista_editar_usuario(u: crate::models::Usuario, perfiles: Vec<crate::models::Perfil>) -> String {

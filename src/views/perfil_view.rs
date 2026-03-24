@@ -1,26 +1,25 @@
 pub fn vista_tabla_perfiles(perfiles: Vec<crate::models::Perfil>) -> String {
     let mut filas = String::new();
     for p in perfiles {
+        let tipo_valor = if p.bitadministrador { "administrador" } else { "estandar" };
         filas.push_str(&format!(
             r#"
-            <tr class="perfil-row">
+            <tr class="perfil-row" data-nombre="{nombre_lower}" data-tipo="{tipo_valor}">
                 <td><strong>{nombre}</strong></td>
-                <td>{tipo}</td>
+                <td>{tipo_badge}</td>
                 <td class="actions">
-                    <a href="/vistas/perfiles/editar/{id}" class="btn-action edit" title="Editar Perfil">
-                        <i class="fas fa-edit"></i>
-                    </a>
-                    <button class="btn-action delete" onclick="eliminarPerfil({id})" title="Eliminar Perfil">
-                        <i class="fas fa-trash-alt"></i>
-                    </button>
+                    <a href="/vistas/perfiles/editar/{id}" class="btn-action edit"><i class="fas fa-edit"></i></a>
+                    <button class="btn-action delete" onclick="eliminarPerfil({id})"><i class="fas fa-trash-alt"></i></button>
                 </td>
             </tr>
             "#,
+            nombre_lower = p.strnombreperfil.to_lowercase(),
             nombre = p.strnombreperfil,
-            tipo = if p.bitadministrador { 
-                r#"<span class="badge admin"><i class="fas fa-shield-check"></i> Administrador</span>"# 
-            } else { 
-                r#"<span class="badge user"><i class="fas fa-user"></i> Estándar</span>"# 
+            tipo_valor = tipo_valor,
+            tipo_badge = if p.bitadministrador {
+                r#"<span class="badge admin"><i class="fas fa-shield-alt"></i> Administrador</span>"#
+            } else {
+                r#"<span class="badge user"><i class="fas fa-user"></i> Estándar</span>"#
             },
             id = p.id
         ));
@@ -38,12 +37,39 @@ pub fn vista_tabla_perfiles(perfiles: Vec<crate::models::Perfil>) -> String {
     <div class="card-table">
         <div class="table-header">
             <div>
-                <h2 style="color: var(--primary-blue); margin:0;">Gestión de Perfiles</h2>
-                <p style="color: #64748b; font-size: 0.85rem; margin-top: 5px;">Configure los niveles de acceso al sistema</p>
+                <h2 style="color: var(--primary-blue); margin:0;">Módulo de Perfiles</h2>
+                <p style="color: #64748b; font-size: 0.85rem; margin-top: 5px;">Gestión de roles y permisos del sistema.</p>
             </div>
             <a href="/vistas/perfiles/nuevo" class="btn-new-pro">
                 <i class="fas fa-plus-circle"></i> Nuevo Perfil
             </a>
+        </div>
+
+        <!-- FILTROS -->
+        <div class="filtros-container">
+            <div class="filtro-grupo">
+                <label class="filtro-label">BUSCAR POR NOMBRE</label>
+                <div class="filtro-search-wrap">
+                    <i class="fas fa-search filtro-icon"></i>
+                    <input type="text" id="filtroBusqueda" class="filtro-input"
+                           placeholder="Ej. Administrador, Ventas..."
+                           oninput="aplicarFiltros()">
+                </div>
+            </div>
+            <div class="filtro-grupo filtro-grupo-sm">
+                <label class="filtro-label">TIPO DE PERFIL</label>
+                <select id="filtroTipo" class="filtro-select" onchange="aplicarFiltros()">
+                    <option value="">Todos los perfiles</option>
+                    <option value="administrador">Administrador</option>
+                    <option value="estandar">Estándar</option>
+                </select>
+            </div>
+            <div class="filtro-grupo filtro-grupo-xs">
+                <label class="filtro-label">&nbsp;</label>
+                <button class="filtro-btn-limpiar" onclick="limpiarFiltros()">
+                    <i class="fas fa-times"></i> Limpiar
+                </button>
+            </div>
         </div>
 
         <div class="table-responsive">
@@ -55,13 +81,16 @@ pub fn vista_tabla_perfiles(perfiles: Vec<crate::models::Perfil>) -> String {
                         <th style="text-align: center;">Acciones</th>
                     </tr>
                 </thead>
-                <tbody>
-                    {filas}
-                </tbody>
+                <tbody>{filas}</tbody>
             </table>
+            <div id="sinResultados" style="display:none; text-align:center; padding:40px; color:#94a3b8;">
+                <i class="fas fa-search" style="font-size:2rem; margin-bottom:10px;"></i>
+                <p style="margin:0; font-weight:600;">No hay perfiles con esos filtros</p>
+            </div>
         </div>
 
-        <div class="pagination-container" style="display: flex; justify-content: space-between; align-items: center; margin-top: 20px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:20px;">
+            <span id="contadorResultados" style="font-size:0.85rem; color:#64748b;"></span>
             <div class="pagination-btns">
                 <button class="btn-page" id="btnPrev" onclick="cambiarPagina(-1)"><i class="fas fa-chevron-left"></i> Anterior</button>
                 <button class="btn-page" id="btnNext" onclick="cambiarPagina(1)">Siguiente <i class="fas fa-chevron-right"></i></button>
@@ -71,8 +100,22 @@ pub fn vista_tabla_perfiles(perfiles: Vec<crate::models::Perfil>) -> String {
 
     <style>
         .card-table {{ background: white; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); padding: 25px; }}
-        .table-header {{ display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; border-bottom: 1px solid #f1f5f9; padding-bottom: 20px; }}
-        .btn-new-pro {{ background: var(--accent-green); color: white; text-decoration: none; padding: 12px 24px; border-radius: 8px; font-weight: 600; font-size: 0.9rem; display: inline-flex; align-items: center; gap: 8px; transition: 0.3s; box-shadow: 0 4px 10px rgba(40, 167, 69, 0.2); }}
+        .table-header {{ display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid #f1f5f9; padding-bottom: 20px; }}
+        .btn-new-pro {{ background: var(--accent-green); color: white; text-decoration: none; padding: 12px 24px; border-radius: 8px; font-weight: 600; font-size: 0.9rem; display: inline-flex; align-items: center; gap: 8px; transition: 0.3s; }}
+
+        .filtros-container {{ display: flex; gap: 16px; align-items: flex-end; flex-wrap: wrap; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 18px 20px; margin-bottom: 20px; }}
+        .filtro-grupo {{ display: flex; flex-direction: column; gap: 6px; flex: 1; min-width: 200px; }}
+        .filtro-grupo-sm {{ flex: 0 0 200px; }}
+        .filtro-grupo-xs {{ flex: 0 0 110px; }}
+        .filtro-label {{ font-size: 0.85rem; font-weight: 700; color: var(--primary-blue); letter-spacing: 0.5px; text-transform: uppercase; }}
+        .filtro-search-wrap {{ position: relative; }}
+        .filtro-icon {{ position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 0.85rem; }}
+        .filtro-input {{ width: 100%; padding: 10px 12px 10px 34px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 0.9rem; box-sizing: border-box; font-family: inherit; }}
+        .filtro-input:focus {{ outline: none; border-color: var(--primary-blue); }}
+        .filtro-select {{ width: 100%; padding: 10px 12px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 0.9rem; background: white; font-family: inherit; }}
+        .filtro-btn-limpiar {{ width: 100%; padding: 10px 12px; background: white; border: 1px solid #e2e8f0; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 0.85rem; color: #64748b; display: flex; align-items: center; justify-content: center; gap: 6px; transition: 0.2s; }}
+        .filtro-btn-limpiar:hover {{ background: #f1f5f9; color: #e11d48; border-color: #fecaca; }}
+
         .craxker-table {{ width: 100%; border-collapse: collapse; }}
         .craxker-table th {{ text-align: left; padding: 15px; background: #f8fafc; color: var(--primary-blue); font-size: 0.85rem; text-transform: uppercase; border-bottom: 2px solid #e2e8f0; }}
         .craxker-table td {{ padding: 15px; border-bottom: 1px solid #f1f5f9; color: #475569; }}
@@ -89,30 +132,57 @@ pub fn vista_tabla_perfiles(perfiles: Vec<crate::models::Perfil>) -> String {
     <script>
         let paginaActual = 1;
         const filasPorPagina = 5;
+        let filasFiltradas = [];
+
+        function aplicarFiltros() {{
+            const busqueda = document.getElementById('filtroBusqueda').value.toLowerCase().trim();
+            const tipo     = document.getElementById('filtroTipo').value;
+            const todas    = Array.from(document.querySelectorAll('.perfil-row'));
+
+            filasFiltradas = todas.filter(f => {{
+                const okNombre = !busqueda || (f.dataset.nombre || '').includes(busqueda);
+                const okTipo   = !tipo     || f.dataset.tipo === tipo;
+                return okNombre && okTipo;
+            }});
+
+            todas.forEach(f => f.style.display = 'none');
+            paginaActual = 1;
+            mostrarPagina(1);
+            document.getElementById('sinResultados').style.display =
+                filasFiltradas.length === 0 ? 'block' : 'none';
+        }}
+
+        function limpiarFiltros() {{
+            document.getElementById('filtroBusqueda').value = '';
+            document.getElementById('filtroTipo').value = '';
+            aplicarFiltros();
+        }}
 
         function mostrarPagina(n) {{
-            const filas = Array.from(document.querySelectorAll('.perfil-row'));
-            const totalPaginas = Math.ceil(filas.length / filasPorPagina);
+            const base = filasFiltradas.length > 0
+                ? filasFiltradas
+                : Array.from(document.querySelectorAll('.perfil-row'));
+
+            const total = Math.ceil(base.length / filasPorPagina);
             if (n < 1) n = 1;
-            if (n > totalPaginas) n = totalPaginas;
+            if (n > total) n = total;
             paginaActual = n;
 
-            filas.forEach((fila, index) => {{
-                fila.style.display = (index >= (n - 1) * filasPorPagina && index < n * filasPorPagina) ? 'table-row' : 'none';
+            Array.from(document.querySelectorAll('.perfil-row')).forEach(f => f.style.display = 'none');
+            base.forEach((f, i) => {{
+                f.style.display = (i >= (n-1)*filasPorPagina && i < n*filasPorPagina) ? 'table-row' : 'none';
             }});
 
             document.getElementById('btnPrev').disabled = (paginaActual === 1);
-            document.getElementById('btnNext').disabled = (paginaActual === totalPaginas || totalPaginas === 0);
+            document.getElementById('btnNext').disabled = (paginaActual === total || total === 0);
         }}
 
-        function cambiarPagina(delta) {{
-            mostrarPagina(paginaActual + delta);
-        }}
+        function cambiarPagina(delta) {{ mostrarPagina(paginaActual + delta); }}
 
         async function eliminarPerfil(id) {{
             if (!confirm("¿Seguro de eliminar este perfil?")) return;
             try {{
-                const res = await fetch(`/api/perfiles/${{id}}`, {{ 
+                const res = await fetch(`/api/perfiles/${{id}}`, {{
                     method: 'DELETE',
                     headers: {{ 'Authorization': 'Bearer ' + localStorage.getItem('jwt_token') }}
                 }});
@@ -123,12 +193,12 @@ pub fn vista_tabla_perfiles(perfiles: Vec<crate::models::Perfil>) -> String {
 
         document.addEventListener('DOMContentLoaded', async () => {{
             await aplicarPermisosAcciones('PERFIL');
+            filasFiltradas = Array.from(document.querySelectorAll('.perfil-row'));
             mostrarPagina(1);
         }});
     </script>
     "##, filas = filas)
 }
-
 
 pub fn vista_nuevo_perfil() -> String {
     format!(r##"
