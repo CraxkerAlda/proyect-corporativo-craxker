@@ -1,0 +1,5 @@
+[phases.setup]
+    nixPkgs = ['...', 'rustc-1.88.0', 'cargo-1.88.0']
+
+[variables]
+    NIXPACKS_METADATA = 'rustc-1.88.0'
