@@ -15,7 +15,8 @@ pub fn layout_maestro(titulo: &str, contenido: String) -> String {
                 --white: #ffffff;
                 --bg-gray: #f8fafc;
             }}
-            body {{ font-family: 'Inter', sans-serif; margin: 0; background: var(--bg-gray); display: flex; flex-direction: column; min-height: 100vh; }}
+            
+            body {{ font-family: 'Inter', sans-serif; margin: 0; background: var(--bg-gray); display: none; flex-direction: column; min-height: 100vh; }}
             
             .top-nav {{ 
                 background: var(--primary-blue); 
@@ -92,33 +93,59 @@ pub fn layout_maestro(titulo: &str, contenido: String) -> String {
 
         <script>
             // SEGURIDAD: Verificar si tiene permiso de consulta en el módulo actual
-            async function aplicarPermisosAcciones(nombreModulo) {{
+            async function aplicarPermisosAcciones(nombreModulo, accionRequerida = null) {{
                 const token = localStorage.getItem('jwt_token');
-                if (!token) return;
+
+                if (!token) {{
+                    window.location.href = '/login';
+                    return;
+                }}
 
                 try {{
-                    const res = await fetch('/api/permisos/mis-permisos', {{ 
-                        headers: {{ 'Authorization': 'Bearer ' + token }} 
+                    const res = await fetch('/api/permisos/mis-permisos', {{
+                        headers: {{ 'Authorization': 'Bearer ' + token }}
                     }});
-                    if (!res.ok) return;
+
+                    if (res.status === 401) {{
+                        localStorage.clear();
+                        window.location.href = '/login';
+                        return;
+                    }}
+
+                    if (!res.ok) {{
+                        window.location.href = '/error-403';
+                        return;
+                    }}
 
                     const permisos = await res.json();
                     const p = permisos.find(x => x.strnombremodulo === nombreModulo);
 
-                    if (!p || !p.bitconsulta) {{
-                        window.location.href = "/error-403";
+                    const tieneAcceso = p && (p.bitconsulta || p.bitagregar || p.biteditar || p.biteliminar);
+                    if (!tieneAcceso) {{
+                        window.location.href = '/error-403';
                         return;
                     }}
 
-                    if (!p.bitagregar) document.querySelectorAll('.btn-new-pro, .btn-save').forEach(el => el.style.display = 'none');
-                    if (!p.biteditar) document.querySelectorAll('.edit').forEach(el => el.style.display = 'none');
+                    if (accionRequerida !== null && !p[accionRequerida]) {{
+                        window.location.href = '/error-403';
+                        return;
+                    }}
+
+                    if (!p.bitagregar)  document.querySelectorAll('.btn-new-pro, .btn-save').forEach(el => el.style.display = 'none');
+                    if (!p.biteditar)   document.querySelectorAll('.edit').forEach(el => el.style.display = 'none');
                     if (!p.biteliminar) document.querySelectorAll('.delete').forEach(el => el.style.display = 'none');
-                }} catch(e) {{ console.error(e); }}
+
+                }} catch(e) {{
+                    console.error('[Craxker Hub] Error verificando permisos:', e);
+                    window.location.href = '/error-403';
+                }}
             }}
 
             document.addEventListener('DOMContentLoaded', async () => {{
                 const token = localStorage.getItem('jwt_token');
                 if(!token) {{ window.location.href = '/login'; return; }}
+
+                document.body.style.display = 'flex';
 
                 // Cargar datos de usuario
                 const userName = localStorage.getItem('user_name') || 'Usuario';
