@@ -14,9 +14,9 @@ pub fn vista_tabla_perfiles(perfiles: Vec<crate::models::Perfil>) -> String {
             </tr>
             "#,
             nombre_lower = p.strnombreperfil.to_lowercase(),
-            nombre = p.strnombreperfil,
-            tipo_valor = tipo_valor,
-            tipo_badge = if p.bitadministrador {
+            nombre       = p.strnombreperfil,
+            tipo_valor   = tipo_valor,
+            tipo_badge   = if p.bitadministrador {
                 r#"<span class="badge admin"><i class="fas fa-shield-alt"></i> Administrador</span>"#
             } else {
                 r#"<span class="badge user"><i class="fas fa-user"></i> Estándar</span>"#
@@ -45,7 +45,6 @@ pub fn vista_tabla_perfiles(perfiles: Vec<crate::models::Perfil>) -> String {
             </a>
         </div>
 
-        <!-- FILTROS -->
         <div class="filtros-container">
             <div class="filtro-grupo">
                 <label class="filtro-label">BUSCAR POR NOMBRE</label>
@@ -154,7 +153,7 @@ pub fn vista_tabla_perfiles(perfiles: Vec<crate::models::Perfil>) -> String {
 
         function limpiarFiltros() {{
             document.getElementById('filtroBusqueda').value = '';
-            document.getElementById('filtroTipo').value = '';
+            document.getElementById('filtroTipo').value     = '';
             aplicarFiltros();
         }}
 
@@ -175,6 +174,8 @@ pub fn vista_tabla_perfiles(perfiles: Vec<crate::models::Perfil>) -> String {
 
             document.getElementById('btnPrev').disabled = (paginaActual === 1);
             document.getElementById('btnNext').disabled = (paginaActual === total || total === 0);
+            document.getElementById('contadorResultados').innerText =
+                `Mostrando ${{Math.min(n*filasPorPagina, base.length)}} de ${{base.length}} perfil(es)`;
         }}
 
         function cambiarPagina(delta) {{ mostrarPagina(paginaActual + delta); }}
@@ -200,6 +201,7 @@ pub fn vista_tabla_perfiles(perfiles: Vec<crate::models::Perfil>) -> String {
     "##, filas = filas)
 }
 
+
 pub fn vista_nuevo_perfil() -> String {
     format!(r##"
     <div class="breadcrumb">
@@ -221,12 +223,13 @@ pub fn vista_nuevo_perfil() -> String {
         <form id="formNuevoPerfil" onsubmit="guardarPerfil(event)">
             <div class="form-group" style="margin-bottom: 20px;">
                 <label style="font-weight: 600; color: var(--primary-blue); margin-bottom: 8px; display: block;">
-                    <i class="fas fa-signature"></i> Nombre del Perfil:
+                    <i class="fas fa-signature"></i> Nombre del Perfil (4–30 caracteres):
                 </label>
-                <input type="text" id="nombre_perfil" required maxlength="30" 
+                <input type="text" id="nombre_perfil" required
+                       minlength="4" maxlength="30"
                        placeholder="Ej. OPERADOR DE SISTEMA" 
-                       style="width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px; text-transform: uppercase; font-size: 1rem;">
-                <small id="errNombre" style="color: #e11d48; font-size: 0.75rem; font-weight: 600;"></small>
+                       style="width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px; text-transform: uppercase; font-size: 1rem; font-family: inherit; box-sizing: border-box;">
+                <small id="errNombre" style="color: #e11d48; font-size: 0.75rem; font-weight: 600; margin-top: 4px; display: block;"></small>
             </div>
             
             <div class="form-group" style="display: flex; align-items: center; gap: 12px; padding: 15px; background: #f8fafc; border-radius: 10px; margin-bottom: 30px; border: 1px dashed #cbd5e1;">
@@ -251,25 +254,35 @@ pub fn vista_nuevo_perfil() -> String {
     <script>
         async function guardarPerfil(e) {{
             e.preventDefault();
-            
-            const inputNombre = document.getElementById('nombre_perfil');
-            const errNombre = document.getElementById('errNombre');
-            const isAdmin = document.getElementById('es_admin').checked;
-            const btn = e.target.querySelector('button[type="submit"]');
-            
-            const nombre = inputNombre.value.trim().toUpperCase();
 
-            // Validaciones de detalle
-            errNombre.innerText = "";
-            
-            if (nombre.length < 4) {{ 
-                errNombre.innerText = "El nombre es muy corto (mínimo 4 caracteres)."; 
-                return; 
+            const inputNombre = document.getElementById('nombre_perfil');
+            const errNombre   = document.getElementById('errNombre');
+            const isAdmin     = document.getElementById('es_admin').checked;
+            const btn         = e.target.querySelector('button[type="submit"]');
+            const nombre      = inputNombre.value.trim().toUpperCase();
+
+            errNombre.innerText = '';
+
+            // ── Validaciones ─────────────────────────────────────────
+            if (nombre.length < 4) {{
+                errNombre.innerText = 'Mínimo 4 caracteres.';
+                return;
             }}
-            
-            if (/(.)\1{{3,}}/.test(nombre)) {{ 
-                errNombre.innerText = "El nombre contiene demasiados caracteres repetidos."; 
-                return; 
+            if (nombre.length > 30) {{
+                errNombre.innerText = 'Máximo 30 caracteres.';
+                return;
+            }}
+            if (/^\d+$/.test(nombre)) {{
+                errNombre.innerText = 'No puede ser solo números.';
+                return;
+            }}
+            if (/(.)\1{{3,}}/.test(nombre)) {{
+                errNombre.innerText = 'Demasiados caracteres repetidos.';
+                return;
+            }}
+            if (/[^A-Z0-9\s_\-]/.test(nombre)) {{
+                errNombre.innerText = 'Solo letras, números, espacios, guion y guion bajo.';
+                return;
             }}
 
             btn.disabled = true;
@@ -282,17 +295,13 @@ pub fn vista_nuevo_perfil() -> String {
                         'Content-Type': 'application/json',
                         'Authorization': 'Bearer ' + localStorage.getItem('jwt_token') 
                     }},
-                    body: JSON.stringify({{ 
-                        strnombreperfil: nombre, 
-                        bitadministrador: isAdmin 
-                    }})
+                    body: JSON.stringify({{ strnombreperfil: nombre, bitadministrador: isAdmin }})
                 }});
 
                 if (res.ok) {{
                     alert("Perfil creado exitosamente en Craxker Design Hub");
                     window.location.href = "/vistas/perfiles";
                 }} else {{
-                    const errorMsg = await res.text();
                     alert("Error: No se pudo crear el perfil. Verifique si ya existe o sus permisos.");
                     btn.disabled = false;
                     btn.innerHTML = '<i class="fas fa-check"></i> Guardar Perfil';
@@ -306,11 +315,19 @@ pub fn vista_nuevo_perfil() -> String {
 
         document.addEventListener('DOMContentLoaded', async () => {{
             await aplicarPermisosAcciones('PERFIL', 'bitagregar');
+
+            // Forzar mayúsculas en tiempo real
+            const input = document.getElementById('nombre_perfil');
+            input.addEventListener('input', () => {{
+                const pos = input.selectionStart;
+                input.value = input.value.toUpperCase();
+                input.setSelectionRange(pos, pos);
+            }});
         }});
-        
     </script>
     "##)
 }
+
 
 pub fn vista_editar_perfil(perfil: crate::models::Perfil) -> String {
     format!(r##"
@@ -330,11 +347,13 @@ pub fn vista_editar_perfil(perfil: crate::models::Perfil) -> String {
             <h2 style="color: var(--primary-blue); margin: 0;">Modificar Perfil</h2>
         </div>
 
-        <form id="formEditarPerfil" onsubmit="actualizarPerfil(event, {id})">
+        <form id="formEditarPerfil" onsubmit="validarYActualizar(event, {id})">
             <div class="form-group" style="margin-bottom: 20px; display: flex; flex-direction: column; gap: 8px;">
-                <label style="font-weight: 600; color: var(--primary-blue);">Nombre del Perfil:</label>
-                <input type="text" id="txtNombrePerfil" value="{nombre}" required maxlength="30"
-                       style="width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px; text-transform: uppercase; box-sizing: border-box;">
+                <label style="font-weight: 600; color: var(--primary-blue);">Nombre del Perfil (4–30 caracteres):</label>
+                <input type="text" id="txtNombrePerfil" value="{nombre}"
+                       required minlength="4" maxlength="30"
+                       style="width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px; text-transform: uppercase; box-sizing: border-box; font-family: inherit; font-size: 0.95rem;">
+                <small id="errNombre" style="color: #e11d48; font-size: 0.75rem; font-weight: 600;"></small>
             </div>
             
             <div class="form-group" style="display: flex; align-items: center; gap: 12px; padding: 15px; background: #f8fafc; border-radius: 10px; margin-bottom: 30px; border: 1px dashed #cbd5e1;">
@@ -355,11 +374,41 @@ pub fn vista_editar_perfil(perfil: crate::models::Perfil) -> String {
     </div>
 
     <script>
-        async function actualizarPerfil(e, id) {{
+        function validarYActualizar(e, id) {{
             e.preventDefault();
-            const nombre = document.getElementById('txtNombrePerfil').value.trim().toUpperCase();
+
+            const nombre    = document.getElementById('txtNombrePerfil').value.trim().toUpperCase();
+            const errNombre = document.getElementById('errNombre');
+            errNombre.innerText = '';
+
+            // ── Validaciones ─────────────────────────────────────────
+            if (nombre.length < 4) {{
+                errNombre.innerText = 'Mínimo 4 caracteres.';
+                return;
+            }}
+            if (nombre.length > 30) {{
+                errNombre.innerText = 'Máximo 30 caracteres.';
+                return;
+            }}
+            if (/^\d+$/.test(nombre)) {{
+                errNombre.innerText = 'No puede ser solo números.';
+                return;
+            }}
+            if (/(.)\1{{3,}}/.test(nombre)) {{
+                errNombre.innerText = 'Demasiados caracteres repetidos.';
+                return;
+            }}
+            if (/[^A-Z0-9\s_\-]/.test(nombre)) {{
+                errNombre.innerText = 'Solo letras, números, espacios, guion y guion bajo.';
+                return;
+            }}
+
+            actualizarPerfil(id, nombre);
+        }}
+
+        async function actualizarPerfil(id, nombre) {{
             const isAdmin = document.getElementById('chkAdmin').checked;
-            const btn = document.getElementById('btnActualizar');
+            const btn     = document.getElementById('btnActualizar');
 
             btn.disabled = true;
             btn.innerHTML = 'Procesando...';
@@ -391,10 +440,18 @@ pub fn vista_editar_perfil(perfil: crate::models::Perfil) -> String {
 
         document.addEventListener('DOMContentLoaded', async () => {{
             await aplicarPermisosAcciones('PERFIL', 'biteditar');
+
+            // Forzar mayúsculas en tiempo real
+            const input = document.getElementById('txtNombrePerfil');
+            input.addEventListener('input', () => {{
+                const pos = input.selectionStart;
+                input.value = input.value.toUpperCase();
+                input.setSelectionRange(pos, pos);
+            }});
         }});
     </script>
-    "##, 
-    id = perfil.id, 
-    nombre = perfil.strnombreperfil,
+    "##,
+    id      = perfil.id,
+    nombre  = perfil.strnombreperfil,
     checked = if perfil.bitadministrador { "checked" } else { "" })
 }

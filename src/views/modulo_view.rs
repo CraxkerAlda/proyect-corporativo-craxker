@@ -12,8 +12,8 @@ pub fn vista_tabla_modulos(modulos: Vec<crate::models::Modulo>) -> String {
             </tr>
             "#,
             nombre_lower = m.strnombremodulo.to_lowercase(),
-            nombre = m.strnombremodulo,
-            id = m.id
+            nombre       = m.strnombremodulo,
+            id           = m.id
         ));
     }
 
@@ -91,7 +91,6 @@ pub fn vista_tabla_modulos(modulos: Vec<crate::models::Modulo>) -> String {
         .filtro-label {{ font-size: 0.85rem; font-weight: 700; color: var(--primary-blue); letter-spacing: 0.5px; text-transform: uppercase; }}
         .filtro-search-wrap {{ position: relative; }}
         .filtro-icon {{ position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 0.85rem; }}
-        .filtro-select {{ width: 100%; padding: 10px 12px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 0.9rem; background: white; font-family: inherit; }}
         .filtro-input {{ width: 100%; padding: 10px 12px 10px 34px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 0.9rem; box-sizing: border-box; font-family: inherit; }}
         .filtro-input:focus {{ outline: none; border-color: var(--primary-blue); }}
         .filtro-btn-limpiar {{ width: 100%; padding: 10px 12px; background: white; border: 1px solid #e2e8f0; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 0.85rem; color: #64748b; display: flex; align-items: center; justify-content: center; gap: 6px; transition: 0.2s; }}
@@ -149,6 +148,8 @@ pub fn vista_tabla_modulos(modulos: Vec<crate::models::Modulo>) -> String {
 
             document.getElementById('btnPrev').disabled = (paginaActual === 1);
             document.getElementById('btnNext').disabled = (paginaActual === total || total === 0);
+            document.getElementById('contadorResultados').innerText =
+                `Mostrando ${{Math.min(n*filasPorPagina, base.length)}} de ${{base.length}} módulo(s)`;
         }}
 
         function cambiarPagina(delta) {{ mostrarPagina(paginaActual + delta); }}
@@ -174,6 +175,7 @@ pub fn vista_tabla_modulos(modulos: Vec<crate::models::Modulo>) -> String {
     "##, filas = filas)
 }
 
+
 pub fn vista_nuevo_modulo() -> String {
     format!(r##"
     <div class="breadcrumb">
@@ -196,11 +198,12 @@ pub fn vista_nuevo_modulo() -> String {
         <form id="formModulo" onsubmit="guardarModulo(event)">
             <div class="form-group" style="display: flex; flex-direction: column; gap: 10px;">
                 <label style="font-weight: 700; color: var(--primary-blue); font-size: 0.9rem;">
-                    <i class="fas fa-tag"></i> Nombre del Módulo:
+                    <i class="fas fa-tag"></i> Nombre del Módulo (3–30 caracteres):
                 </label>
-                <input type="text" id="nombre_modulo" required maxlength="30" 
+                <input type="text" id="nombre_modulo" required
+                       minlength="3" maxlength="30"
                        placeholder="EJ. CONTROL DE PAGOS" 
-                       style="padding: 14px; border: 1px solid #e2e8f0; border-radius: 10px; text-transform: uppercase; font-size: 1rem; transition: 0.3s;">
+                       style="padding: 14px; border: 1px solid #e2e8f0; border-radius: 10px; text-transform: uppercase; font-size: 1rem; transition: 0.3s; font-family: inherit; width: 100%; box-sizing: border-box;">
                 <small id="errNombre" style="color: #e11d48; font-size: 0.8rem; font-weight: 600;"></small>
             </div>
 
@@ -220,15 +223,33 @@ pub fn vista_nuevo_modulo() -> String {
     <script>
         async function guardarModulo(e) {{
             e.preventDefault();
-            
-            const input = document.getElementById('nombre_modulo');
-            const btn = document.getElementById('btnGuardar');
-            const err = document.getElementById('errNombre');
+
+            const input  = document.getElementById('nombre_modulo');
+            const btn    = document.getElementById('btnGuardar');
+            const err    = document.getElementById('errNombre');
             const nombre = input.value.trim().toUpperCase();
 
-            err.innerText = "";
-            if(nombre.length < 3) {{
-                err.innerText = "El nombre es demasiado corto.";
+            err.innerText = '';
+
+            // ── Validaciones ─────────────────────────────────────────
+            if (nombre.length < 3) {{
+                err.innerText = 'Mínimo 3 caracteres.';
+                return;
+            }}
+            if (nombre.length > 30) {{
+                err.innerText = 'Máximo 30 caracteres.';
+                return;
+            }}
+            if (/^\d+$/.test(nombre)) {{
+                err.innerText = 'No puede ser solo números.';
+                return;
+            }}
+            if (/(.)\1{{3,}}/.test(nombre)) {{
+                err.innerText = 'Demasiados caracteres repetidos.';
+                return;
+            }}
+            if (/[^A-Z0-9\s_\-]/.test(nombre)) {{
+                err.innerText = 'Solo letras, números, espacios y guiones.';
                 return;
             }}
 
@@ -255,7 +276,6 @@ pub fn vista_nuevo_modulo() -> String {
                     btn.innerHTML = '<i class="fas fa-save"></i> Guardar Módulo';
                 }}
             }} catch (error) {{
-                console.error("Error en fetch:", error);
                 alert("Error de conexión. Asegúrate de que el servidor esté corriendo.");
                 btn.disabled = false;
                 btn.innerHTML = '<i class="fas fa-save"></i> Guardar Módulo';
@@ -264,8 +284,15 @@ pub fn vista_nuevo_modulo() -> String {
 
         document.addEventListener('DOMContentLoaded', async () => {{
             await aplicarPermisosAcciones('MODULOS', 'bitagregar');
-        }});
 
+            // Forzar mayúsculas en tiempo real
+            const input = document.getElementById('nombre_modulo');
+            input.addEventListener('input', () => {{
+                const pos = input.selectionStart;
+                input.value = input.value.toUpperCase();
+                input.setSelectionRange(pos, pos);
+            }});
+        }});
     </script>
     "##)
 }
@@ -288,25 +315,66 @@ pub fn vista_editar_modulo(m: crate::models::Modulo) -> String {
             <i class="fas fa-edit" style="font-size: 2.5rem; color: var(--primary-blue); margin-bottom: 10px;"></i>
             <h2 style="color: var(--primary-blue); margin: 0;">Modificar Módulo</h2>
         </div>
-        <form onsubmit="actualizarModulo(event, {id})">
+
+        <form id="formEditar" onsubmit="validarYActualizar(event, {id})">
             <div class="form-group" style="display: flex; flex-direction: column; gap: 8px;">
-                <label style="font-weight: 600; color: var(--primary-blue);">Nombre del Módulo:</label>
-                <input type="text" id="nombre_modulo" value="{nombre}" required 
-                       style="padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px; text-transform: uppercase;">
+                <label style="font-weight: 600; color: var(--primary-blue);">Nombre del Módulo (3–30 caracteres):</label>
+                <input type="text" id="nombre_modulo" value="{nombre}"
+                       required minlength="3" maxlength="30"
+                       style="padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px; text-transform: uppercase; font-family: inherit; font-size: 0.95rem; width: 100%; box-sizing: border-box;">
+                <small id="errNombre" style="color: #e11d48; font-size: 0.75rem; font-weight: 600;"></small>
             </div>
+
             <div class="form-actions" style="margin-top: 30px; display: flex; gap: 15px; justify-content: center;">
-                <button type="submit" id="btnActualizar" class="btn-save" style="background: var(--accent-green); color: white; border: none; padding: 12px 30px; border-radius: 8px; font-weight: bold; cursor: pointer;">Actualizar</button>
-                <button type="button" class="btn-cancel" onclick="window.location.href='/vistas/modulo'" style="background: #f1f5f9; padding: 12px 30px; border-radius: 8px; border: none; cursor: pointer;">Volver</button>
+                <button type="submit" id="btnActualizar" class="btn-save"
+                        style="background: var(--accent-green); color: white; border: none; padding: 12px 30px; border-radius: 8px; font-weight: bold; cursor: pointer;">
+                    Actualizar
+                </button>
+                <button type="button" class="btn-cancel" onclick="window.location.href='/vistas/modulo'"
+                        style="background: #f1f5f9; padding: 12px 30px; border-radius: 8px; border: none; cursor: pointer; font-weight: bold; color: #64748b;">
+                    Volver
+                </button>
             </div>
         </form>
     </div>
 
     <script>
-        async function actualizarModulo(e, id) {{
+        function validarYActualizar(e, id) {{
             e.preventDefault();
-            const nombre = document.getElementById('nombre_modulo').value.toUpperCase();
+
+            const input  = document.getElementById('nombre_modulo');
+            const err    = document.getElementById('errNombre');
+            const nombre = input.value.trim().toUpperCase();
+
+            err.innerText = '';
+
+            // ── Validaciones ─────────────────────────────────────────
+            if (nombre.length < 3) {{
+                err.innerText = 'Mínimo 3 caracteres.';
+                return;
+            }}
+            if (nombre.length > 30) {{
+                err.innerText = 'Máximo 30 caracteres.';
+                return;
+            }}
+            if (/^\d+$/.test(nombre)) {{
+                err.innerText = 'No puede ser solo números.';
+                return;
+            }}
+            if (/(.)\1{{3,}}/.test(nombre)) {{
+                err.innerText = 'Demasiados caracteres repetidos.';
+                return;
+            }}
+            if (/[^A-Z0-9\s_\-]/.test(nombre)) {{
+                err.innerText = 'Solo letras, números, espacios y guiones.';
+                return;
+            }}
+
+            actualizarModulo(id, nombre);
+        }}
+
+        async function actualizarModulo(id, nombre) {{
             const btn = document.getElementById('btnActualizar');
-            
             btn.disabled = true;
             btn.innerHTML = 'Procesando...';
 
@@ -338,6 +406,14 @@ pub fn vista_editar_modulo(m: crate::models::Modulo) -> String {
 
         document.addEventListener('DOMContentLoaded', async () => {{
             await aplicarPermisosAcciones('MODULOS', 'biteditar');
+
+            // Forzar mayúsculas en tiempo real
+            const input = document.getElementById('nombre_modulo');
+            input.addEventListener('input', () => {{
+                const pos = input.selectionStart;
+                input.value = input.value.toUpperCase();
+                input.setSelectionRange(pos, pos);
+            }});
         }});
     </script>
     "##, id = m.id, nombre = m.strnombremodulo)

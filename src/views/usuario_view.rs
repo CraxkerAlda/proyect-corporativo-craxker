@@ -36,8 +36,10 @@ pub fn vista_registro_usuario(perfiles: Vec<crate::models::Perfil>) -> String {
         <form id="formRegistro" onsubmit="validarYEnviar(event)">
             <div class="grid-form">
                 <div class="form-group">
-                    <label><i class="fas fa-user"></i> Usuario (Max 15 caracteres):</label>
-                    <input type="text" id="txtUsuario" name="usuario" required maxlength="15" placeholder="Ej. craxker_dev">
+                    <label><i class="fas fa-user"></i> Usuario (3–15 caracteres):</label>
+                    <input type="text" id="txtUsuario" name="usuario"
+                           required minlength="3" maxlength="15"
+                           placeholder="Ej. craxker_dev">
                     <small id="errUsuario" class="text-error"></small>
                 </div>
                 <div class="form-group">
@@ -48,16 +50,25 @@ pub fn vista_registro_usuario(perfiles: Vec<crate::models::Perfil>) -> String {
                     </select>
                 </div>
                 <div class="form-group">
-                    <label><i class="fas fa-lock"></i> Contraseña (Min 8 caracteres):</label>
-                    <input type="password" id="txtPass" name="password" required minlength="8" placeholder="••••••••">
+                    <label><i class="fas fa-lock"></i> Contraseña (8–30 caracteres):</label>
+                    <input type="password" id="txtPass" name="password"
+                           required minlength="8" maxlength="30"
+                           placeholder="••••••••">
+                    <small id="errPass" class="text-error"></small>
                 </div>
                 <div class="form-group">
                     <label><i class="fas fa-envelope"></i> Correo Electrónico:</label>
-                    <input type="email" name="correo" required placeholder="admin@craxker.com">
+                    <input type="email" name="correo"
+                           required maxlength="60"
+                           placeholder="admin@craxker.com">
                 </div>
                 <div class="form-group">
                     <label><i class="fas fa-phone"></i> Número Celular (10 dígitos):</label>
-                    <input type="text" id="txtTel" name="celular" required pattern="[0-9]{{10}}" placeholder="Ej. 7731234567">
+                    <input type="text" id="txtTel" name="celular"
+                           required pattern="[0-9]{{10}}"
+                           maxlength="10" inputmode="numeric"
+                           placeholder="Ej. 7731234567">
+                    <small id="errTel" class="text-error"></small>
                 </div>
                 <div class="form-group">
                     <label><i class="fas fa-image"></i> Foto de Perfil:</label>
@@ -83,7 +94,8 @@ pub fn vista_registro_usuario(perfiles: Vec<crate::models::Perfil>) -> String {
         @media (max-width: 650px) {{ .grid-form {{ grid-template-columns: 1fr; }} }}
         .form-group {{ display: flex; flex-direction: column; gap: 8px; }}
         .form-group label {{ font-weight: 600; color: var(--primary-blue); font-size: 0.85rem; }}
-        .form-group input, .form-group select {{ padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 0.95rem; }}
+        .form-group input, .form-group select {{ padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 0.95rem; font-family: inherit; }}
+        .form-group input:focus, .form-group select:focus {{ outline: none; border-color: var(--primary-blue); }}
         .form-actions {{ margin-top: 40px; display: flex; gap: 15px; justify-content: center; border-top: 1px solid #f1f5f9; padding-top: 30px; }}
         .btn-save {{ background: var(--accent-green); color: white; border: none; padding: 12px 40px; border-radius: 8px; cursor: pointer; font-weight: bold; }}
         .btn-cancel {{ background: #f1f5f9; color: #64748b; border: none; padding: 12px 40px; border-radius: 8px; cursor: pointer; font-weight: bold; }}
@@ -95,15 +107,60 @@ pub fn vista_registro_usuario(perfiles: Vec<crate::models::Perfil>) -> String {
             reader.onload = () => document.getElementById('imgPreview').src = reader.result;
             reader.readAsDataURL(event.target.files[0]);
         }}
+
+        function limpiarErrores() {{
+            ['errUsuario','errTel','errPass'].forEach(id => {{
+                const el = document.getElementById(id);
+                if (el) el.innerText = '';
+            }});
+        }}
+
         function validarYEnviar(e) {{
             e.preventDefault();
-            const usuario = document.getElementById('txtUsuario').value;
-            const errorU = document.getElementById('errUsuario');
-            errorU.innerText = "";
-            if (/(.)\1{{4,}}/.test(usuario)) {{ errorU.innerText = "Demasiados caracteres repetidos."; return; }}
-            if (/^\d+$/.test(usuario)) {{ errorU.innerText = "No puede ser solo números."; return; }}
-            enviarFormulario();
+            limpiarErrores();
+
+            const usuario = document.getElementById('txtUsuario').value.trim();
+            const tel     = document.getElementById('txtTel').value.trim();
+            const pass    = document.getElementById('txtPass').value;
+
+            let valido = true;
+
+            // ── Validar usuario ──────────────────────────────────────
+            if (usuario.length < 3) {{
+                document.getElementById('errUsuario').innerText = 'Mínimo 3 caracteres.';
+                valido = false;
+            }} else if (usuario.length > 15) {{
+                document.getElementById('errUsuario').innerText = 'Máximo 15 caracteres.';
+                valido = false;
+            }} else if (/^\d+$/.test(usuario)) {{
+                document.getElementById('errUsuario').innerText = 'No puede ser solo números.';
+                valido = false;
+            }} else if (/(.)\1{{4,}}/.test(usuario)) {{
+                document.getElementById('errUsuario').innerText = 'Demasiados caracteres repetidos.';
+                valido = false;
+            }} else if (/[^a-zA-Z0-9_]/.test(usuario)) {{
+                document.getElementById('errUsuario').innerText = 'Solo letras, números y guion bajo (_).';
+                valido = false;
+            }}
+
+            // ── Validar contraseña ───────────────────────────────────
+            if (pass.length < 8) {{
+                document.getElementById('errPass').innerText = 'Mínimo 8 caracteres.';
+                valido = false;
+            }} else if (pass.length > 30) {{
+                document.getElementById('errPass').innerText = 'Máximo 30 caracteres.';
+                valido = false;
+            }}
+
+            // ── Validar teléfono ─────────────────────────────────────
+            if (!/^\d{{10}}$/.test(tel)) {{
+                document.getElementById('errTel').innerText = 'Debe tener exactamente 10 dígitos numéricos.';
+                valido = false;
+            }}
+
+            if (valido) enviarFormulario();
         }}
+
         async function enviarFormulario() {{
             const btn = document.getElementById('btnGuardar');
             const form = document.getElementById('formRegistro');
@@ -115,22 +172,18 @@ pub fn vista_registro_usuario(perfiles: Vec<crate::models::Perfil>) -> String {
             try {{
                 const res = await fetch('/api/usuarios/registrar', {{ 
                     method: 'POST', 
-                    headers: {{
-                        'Authorization': 'Bearer ' + localStorage.getItem('jwt_token')
-                    }},
+                    headers: {{ 'Authorization': 'Bearer ' + localStorage.getItem('jwt_token') }},
                     body: formData 
                 }});
 
                 if (res.ok) {{ 
                     alert("Usuario registrado con éxito en Craxker Design Hub"); 
                     window.location.href = "/vistas/usuarios"; 
-                }}
-                else if (res.status === 403) {{
+                }} else if (res.status === 403) {{
                     alert("Error 403: No tienes permiso para crear usuarios.");
                     btn.disabled = false;
                     btn.innerHTML = '<i class="fas fa-save"></i> Registrar Usuario';
-                }}
-                else {{ 
+                }} else {{ 
                     const txt = await res.text();
                     alert("Error en el registro: " + txt); 
                     btn.disabled = false; 
@@ -143,9 +196,22 @@ pub fn vista_registro_usuario(perfiles: Vec<crate::models::Perfil>) -> String {
                 btn.innerHTML = '<i class="fas fa-save"></i> Registrar Usuario';
             }}
         }}
-        
+
         document.addEventListener('DOMContentLoaded', async () => {{
             await aplicarPermisosAcciones('USUARIOS', 'bitagregar');
+
+            // Bloquear letras en teléfono en tiempo real
+            const tel = document.getElementById('txtTel');
+            tel.addEventListener('keypress', e => {{
+                if (!/[0-9]/.test(e.key)) e.preventDefault();
+            }});
+            tel.addEventListener('paste', e => {{
+                const txt = (e.clipboardData || window.clipboardData).getData('text');
+                if (!/^\d+$/.test(txt)) e.preventDefault();
+            }});
+            tel.addEventListener('input', () => {{
+                tel.value = tel.value.replace(/\D/g, '').slice(0, 10);
+            }});
         }});
     </script>
     "##, perfiles_options = opciones_perfil)
@@ -154,7 +220,7 @@ pub fn vista_registro_usuario(perfiles: Vec<crate::models::Perfil>) -> String {
 
 pub fn vista_tabla_usuarios(usuarios: Vec<UsuarioConPerfil>) -> String {
     let mut filas = String::new();
-    
+
     let mut perfiles_vistos: Vec<String> = Vec::new();
     for u in &usuarios {
         if !perfiles_vistos.contains(&u.strnombreperfil) {
@@ -167,6 +233,7 @@ pub fn vista_tabla_usuarios(usuarios: Vec<UsuarioConPerfil>) -> String {
     }
 
     for u in usuarios {
+        let estado_str = if u.idestadousuario == 1 { "activo" } else { "inactivo" };
         filas.push_str(&format!(
             r#"
             <tr class="user-row"
@@ -196,7 +263,7 @@ pub fn vista_tabla_usuarios(usuarios: Vec<UsuarioConPerfil>) -> String {
             perfil = u.strnombreperfil,
             correo = u.strcorreo,
             tel = u.strnumerocelular.unwrap_or_else(|| "-".to_string()),
-            estado_str = "activo", // idEstado no está en UsuarioConPerfil, se deja fijo o amplías el struct
+            estado_str = estado_str,
             id = u.id
         ));
     }
@@ -221,7 +288,6 @@ pub fn vista_tabla_usuarios(usuarios: Vec<UsuarioConPerfil>) -> String {
             </a>
         </div>
 
-        <!-- FILTROS -->
         <div class="filtros-container">
             <div class="filtro-grupo">
                 <label class="filtro-label">BUSCAR POR NOMBRE</label>
@@ -263,9 +329,7 @@ pub fn vista_tabla_usuarios(usuarios: Vec<UsuarioConPerfil>) -> String {
                         <th style="text-align: center;">Acciones</th>
                     </tr>
                 </thead>
-                <tbody>
-                    {filas}
-                </tbody>
+                <tbody>{filas}</tbody>
             </table>
             <div id="sinResultados" style="display:none; text-align:center; padding:40px; color:#94a3b8;">
                 <i class="fas fa-search" style="font-size:2rem; margin-bottom:10px;"></i>
@@ -323,27 +387,21 @@ pub fn vista_tabla_usuarios(usuarios: Vec<UsuarioConPerfil>) -> String {
         let filasFiltradas = [];
 
         function aplicarFiltros() {{
-            const busqueda  = document.getElementById('filtroBusqueda').value.toLowerCase().trim();
-            const perfil    = document.getElementById('filtroPerfil').value;
-            const estado    = document.getElementById('filtroEstado').value;
+            const busqueda   = document.getElementById('filtroBusqueda').value.toLowerCase().trim();
+            const perfil     = document.getElementById('filtroPerfil').value;
+            const estado     = document.getElementById('filtroEstado').value;
             const todasFilas = Array.from(document.querySelectorAll('.user-row'));
 
             filasFiltradas = todasFilas.filter(fila => {{
-                const nombre  = fila.dataset.nombre  || '';
-                const prf     = fila.dataset.perfil  || '';
-                const est     = fila.dataset.estado  || '';
-                const okNombre = !busqueda || nombre.includes(busqueda);
-                const okPerfil = !perfil   || prf === perfil;
-                const okEstado = !estado   || est === estado;
+                const okNombre = !busqueda || (fila.dataset.nombre || '').includes(busqueda);
+                const okPerfil = !perfil   || fila.dataset.perfil === perfil;
+                const okEstado = !estado   || fila.dataset.estado === estado;
                 return okNombre && okPerfil && okEstado;
             }});
 
-            // Ocultar todas primero
             todasFilas.forEach(f => f.style.display = 'none');
-
             paginaActual = 1;
             mostrarPagina(1);
-
             document.getElementById('sinResultados').style.display =
                 filasFiltradas.length === 0 ? 'block' : 'none';
         }}
@@ -365,7 +423,6 @@ pub fn vista_tabla_usuarios(usuarios: Vec<UsuarioConPerfil>) -> String {
             if (n > totalPaginas) n = totalPaginas;
             paginaActual = n;
 
-            // Ocultar todo y mostrar solo la página actual
             Array.from(document.querySelectorAll('.user-row')).forEach(f => f.style.display = 'none');
             base.forEach((fila, index) => {{
                 fila.style.display = (index >= (n-1)*filasPorPagina && index < n*filasPorPagina)
@@ -374,11 +431,11 @@ pub fn vista_tabla_usuarios(usuarios: Vec<UsuarioConPerfil>) -> String {
 
             document.getElementById('btnPrev').disabled = (paginaActual === 1);
             document.getElementById('btnNext').disabled = (paginaActual === totalPaginas || totalPaginas === 0);
+            document.getElementById('contadorResultados').innerText =
+                `Mostrando ${{Math.min(n*filasPorPagina, base.length)}} de ${{base.length}} resultado(s)`;
         }}
 
-        function cambiarPagina(delta) {{
-            mostrarPagina(paginaActual + delta);
-        }}
+        function cambiarPagina(delta) {{ mostrarPagina(paginaActual + delta); }}
 
         document.addEventListener('DOMContentLoaded', async () => {{
             await aplicarPermisosAcciones('USUARIOS');
@@ -395,14 +452,13 @@ pub fn vista_tabla_usuarios(usuarios: Vec<UsuarioConPerfil>) -> String {
                     }});
                     if(res.ok) location.reload();
                     else alert("No tiene permiso para eliminar registros.");
-                }} catch(e) {{
-                    alert("Error de conexión con el servidor.");
-                }}
+                }} catch(e) {{ alert("Error de conexión con el servidor."); }}
             }}
         }}
     </script>
     "##, filas = filas, opciones_perfil_filtro = opciones_perfil_filtro)
 }
+
 
 pub fn vista_editar_usuario(u: crate::models::Usuario, perfiles: Vec<crate::models::Perfil>) -> String {
     let mut opciones = String::new();
@@ -411,7 +467,7 @@ pub fn vista_editar_usuario(u: crate::models::Usuario, perfiles: Vec<crate::mode
         opciones.push_str(&format!(r#"<option value="{}" {}>{}</option>"#, p.id, sel, p.strnombreperfil));
     }
 
-    let sel_activo = if u.idestadousuario == 1 { "selected" } else { "" };
+    let sel_activo   = if u.idestadousuario == 1 { "selected" } else { "" };
     let sel_inactivo = if u.idestadousuario != 1 { "selected" } else { "" };
 
     format!(r##"
@@ -437,25 +493,29 @@ pub fn vista_editar_usuario(u: crate::models::Usuario, perfiles: Vec<crate::mode
             <p style="color: #64748b; font-size: 0.9rem;">Gestión Profesional de Personal</p>
         </div>
 
-        <form id="formEdicion" onsubmit="actualizarUsuario(event, {id_user})">
+        <form id="formEdicion" onsubmit="validarYActualizar(event, {id_user})">
             <div class="grid-form">
                 <div class="form-group">
-                    <label><i class="fas fa-user"></i> Nombre de Usuario:</label>
-                    <input type="text" id="txtUsuario" name="usuario" value="{user_name}" required maxlength="15">
+                    <label><i class="fas fa-user"></i> Nombre de Usuario (3–15 caracteres):</label>
+                    <input type="text" id="txtUsuario" name="usuario" value="{user_name}"
+                           required minlength="3" maxlength="15">
+                    <small id="errUsuario" class="text-error"></small>
                 </div>
                 <div class="form-group">
                     <label><i class="fas fa-id-badge"></i> Perfil de Acceso:</label>
-                    <select name="perfil" required>
-                        {opciones}
-                    </select>
+                    <select name="perfil" required>{opciones}</select>
                 </div>
                 <div class="form-group">
                     <label><i class="fas fa-envelope"></i> Correo Electrónico:</label>
-                    <input type="email" name="correo" value="{correo}" required>
+                    <input type="email" name="correo" value="{correo}"
+                           required maxlength="60">
                 </div>
                 <div class="form-group">
-                    <label><i class="fas fa-phone"></i> Número de Contacto:</label>
-                    <input type="text" id="txtTel" name="celular" value="{tel}" required pattern="[0-9]{{10}}">
+                    <label><i class="fas fa-phone"></i> Número de Contacto (10 dígitos):</label>
+                    <input type="text" id="txtTel" name="celular" value="{tel}"
+                           required pattern="[0-9]{{10}}"
+                           maxlength="10" inputmode="numeric">
+                    <small id="errTel" class="text-error"></small>
                 </div>
                 <div class="form-group">
                     <label><i class="fas fa-toggle-on"></i> Estado del Usuario:</label>
@@ -468,6 +528,14 @@ pub fn vista_editar_usuario(u: crate::models::Usuario, perfiles: Vec<crate::mode
                     <label><i class="fas fa-image"></i> Cambiar Foto de Perfil:</label>
                     <input type="file" name="foto" id="inputFoto" accept="image/*" onchange="previewImage(event)">
                 </div>
+
+                <div class="form-group">
+                    <label><i class="fas fa-lock"></i> Nueva Contraseña (opcional):</label>
+                    <input type="password" name="password" id="txtPass" 
+                        placeholder="Dejar en blanco para no cambiar"
+                        minlength="6">
+                    <small style="color: #64748b; font-size: 0.7rem;">Mínimo 6 caracteres si desea actualizarla.</small>
+                </div>
             </div>
 
             <div class="form-actions">
@@ -477,32 +545,22 @@ pub fn vista_editar_usuario(u: crate::models::Usuario, perfiles: Vec<crate::mode
         </form>
     </div>
 
-
-        <style>
-
+    <style>
+        .text-error {{ color: #e11d48; font-size: 0.75rem; font-weight: 600; margin-top: 4px; }}
         .card-usuario {{ background: white; padding: 40px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.08); max-width: 800px; margin: auto; }}
         .form-header {{ text-align: center; margin-bottom: 30px; }}
         .avatar-wrapper {{ position: relative; width: 130px; height: 130px; margin: 0 auto; }}
         .preview-circular {{ width: 130px; height: 130px; border-radius: 50%; object-fit: cover; border: 4px solid var(--accent-green); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }}
         .btn-upload-icon {{ position: absolute; bottom: 5px; right: 5px; background: var(--primary-blue); color: white; width: 35px; height: 35px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; border: 3px solid white; transition: 0.3s; }}
         .btn-upload-icon:hover {{ transform: scale(1.1); background: var(--accent-green); }}
-
         .grid-form {{ display: grid; grid-template-columns: 1fr 1fr; gap: 25px; }}
-
         .form-group {{ display: flex; flex-direction: column; gap: 8px; }}
-
         .form-group label {{ font-weight: 600; color: var(--primary-blue); font-size: 0.85rem; display: flex; align-items: center; gap: 6px; }}
-
-        .form-group input, .form-group select {{ padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 0.95rem; transition: 0.3s; }}
-
+        .form-group input, .form-group select {{ padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 0.95rem; transition: 0.3s; font-family: inherit; }}
+        .form-group input:focus, .form-group select:focus {{ outline: none; border-color: var(--primary-blue); }}
         .form-actions {{ margin-top: 40px; display: flex; gap: 15px; justify-content: center; border-top: 1px solid #f1f5f9; padding-top: 30px; }}
-
         .btn-save {{ background: var(--accent-green); color: white; border: none; padding: 12px 35px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 0.95rem; transition: 0.3s; display: flex; align-items: center; gap: 8px; }}
-
         .btn-cancel {{ background: #f1f5f9; color: #64748b; border: none; padding: 12px 35px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 0.95rem; transition: 0.3s; }}
-
-        .text-error {{ color: #e11d48; font-size: 0.75rem; font-weight: 600; margin-top: 4px; }}
-
     </style>
 
     <script>
@@ -512,8 +570,45 @@ pub fn vista_editar_usuario(u: crate::models::Usuario, perfiles: Vec<crate::mode
             reader.readAsDataURL(event.target.files[0]);
         }}
 
-        async function actualizarUsuario(e, id) {{
+        function validarYActualizar(e, id) {{
             e.preventDefault();
+
+            const usuario = document.getElementById('txtUsuario').value.trim();
+            const tel     = document.getElementById('txtTel').value.trim();
+
+            document.getElementById('errUsuario').innerText = '';
+            document.getElementById('errTel').innerText     = '';
+
+            let valido = true;
+
+            // ── Validar usuario ──────────────────────────────────────
+            if (usuario.length < 3) {{
+                document.getElementById('errUsuario').innerText = 'Mínimo 3 caracteres.';
+                valido = false;
+            }} else if (usuario.length > 15) {{
+                document.getElementById('errUsuario').innerText = 'Máximo 15 caracteres.';
+                valido = false;
+            }} else if (/^\d+$/.test(usuario)) {{
+                document.getElementById('errUsuario').innerText = 'No puede ser solo números.';
+                valido = false;
+            }} else if (/(.)\1{{4,}}/.test(usuario)) {{
+                document.getElementById('errUsuario').innerText = 'Demasiados caracteres repetidos.';
+                valido = false;
+            }} else if (/[^a-zA-Z0-9_]/.test(usuario)) {{
+                document.getElementById('errUsuario').innerText = 'Solo letras, números y guion bajo (_).';
+                valido = false;
+            }}
+
+            // ── Validar teléfono ─────────────────────────────────────
+            if (!/^\d{{10}}$/.test(tel)) {{
+                document.getElementById('errTel').innerText = 'Debe tener exactamente 10 dígitos numéricos.';
+                valido = false;
+            }}
+
+            if (valido) actualizarUsuario(id);
+        }}
+
+        async function actualizarUsuario(id) {{
             const btn = document.getElementById('btnGuardar');
             const formData = new FormData(document.getElementById('formEdicion'));
             btn.disabled = true;
@@ -533,24 +628,39 @@ pub fn vista_editar_usuario(u: crate::models::Usuario, perfiles: Vec<crate::mode
                     const msg = await res.text();
                     alert("Error: " + msg);
                     btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-sync-alt"></i> Actualizar Usuario';
                 }}
             }} catch (err) {{
                 alert("Error de conexión con el servidor.");
                 btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-sync-alt"></i> Actualizar Usuario';
             }}
         }}
 
         document.addEventListener('DOMContentLoaded', async () => {{
             await aplicarPermisosAcciones('USUARIOS', 'biteditar');
+
+            // Bloquear letras en teléfono en tiempo real
+            const tel = document.getElementById('txtTel');
+            tel.addEventListener('keypress', e => {{
+                if (!/[0-9]/.test(e.key)) e.preventDefault();
+            }});
+            tel.addEventListener('paste', e => {{
+                const txt = (e.clipboardData || window.clipboardData).getData('text');
+                if (!/^\d+$/.test(txt)) e.preventDefault();
+            }});
+            tel.addEventListener('input', () => {{
+                tel.value = tel.value.replace(/\D/g, '').slice(0, 10);
+            }});
         }});
     </script>
-    "##, 
-    id_user = u.id,
-    user_name = u.strnombreusuario,
+    "##,
+    id_user    = u.id,
+    user_name  = u.strnombreusuario,
     foto_actual = u.strimagenpath,
-    opciones = opciones,
-    sel_activo = sel_activo,
+    opciones   = opciones,
+    sel_activo   = sel_activo,
     sel_inactivo = sel_inactivo,
     correo = u.strcorreo,
-    tel = u.strnumerocelular.unwrap_or_default())
+    tel    = u.strnumerocelular.unwrap_or_default())
 }

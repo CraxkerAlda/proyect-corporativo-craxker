@@ -91,6 +91,7 @@ pub async fn actualizar_usuario(
     let mut id_perfil = 0;
     let mut correo = String::new();
     let mut celular = String::new();
+    let mut password_plano = String::new();
     let mut id_estado: i16 = 1;
     let mut nueva_imagen: Option<String> = None;
 
@@ -101,6 +102,7 @@ pub async fn actualizar_usuario(
             "perfil" => id_perfil = field.text().await.unwrap_or_default().parse::<i32>().unwrap_or(0),
             "correo" => correo = field.text().await.unwrap_or_default(),
             "celular" => celular = field.text().await.unwrap_or_default(),
+            "password" => password_plano = field.text().await.unwrap_or_default(), // <-- NUEVO
             "estado" => id_estado = field.text().await.unwrap_or_default().parse::<i16>().unwrap_or(1),
             "foto" => {
                 let data = field.bytes().await.unwrap_or_default();
@@ -117,6 +119,48 @@ pub async fn actualizar_usuario(
             _ => {}
         }
     }
+
+    let nuevo_hash = if !password_plano.trim().is_empty() {
+        match hash(password_plano, DEFAULT_COST) {
+            Ok(h) => Some(h),
+            Err(_) => return (StatusCode::INTERNAL_SERVER_ERROR, "Error al cifrar contraseña").into_response(),
+        }
+    } else {
+        None
+    };
+
+    let res = sqlx::query!(
+        r#"
+        UPDATE usuarios 
+        SET strNombreUsuario = $1, 
+            idPerfil = $2, 
+            strCorreo = $3, 
+            strNumeroCelular = $4, 
+            idEstadoUsuario = $5,
+            strImagenPath = COALESCE($6, strImagenPath),
+            strPwd = COALESCE($7, strPwd)  -- <-- NUEVO CAMPO
+        WHERE id = $8
+        "#,
+        nombre_usuario.trim(),
+        id_perfil,
+        correo.trim(),
+        celular.trim(),
+        id_estado,
+        nueva_imagen,
+        nuevo_hash, 
+        id
+    )
+    .execute(&pool)
+    .await;
+
+    match res {
+        Ok(_) => (StatusCode::OK, "Usuario actualizado con éxito").into_response(),
+        Err(e) => {
+            println!("Error al actualizar: {:?}", e);
+            (StatusCode::BAD_REQUEST, "Error en la base de datos").into_response()
+        }
+    }
+}
 
     let res = sqlx::query!(
         r#"
